@@ -45,10 +45,15 @@ def getdate(meta):
         # fallback to default
         return "{{between|1661|1715}}" # default date if unknown
 
+    else:
+        # fallback to default
+        return "{{between|1661|1715}}" # default date if unknown
+
 
 def getfilename(meta, img):
     """Return a clean filename based on libris identifier"""
-    return "Suecia antiqua (%s)" % img["url"].replace(url,"").replace("/","").replace("%2C","_").replace(".tif", "")
+    fileno = img["url"].replace(url,"").replace("/","").replace("%2C","_").replace(".tif", "").split("_")[1]
+    return "Suecia antiqua (SELIBR %s)-%s" % (img["id"], fileno)
 
 
 def cleanbibblo(text):
@@ -65,6 +70,7 @@ def filedata():
             E.source(img["url"]),
             E.title(cleanbibblo(meta["xsearch"]["list"][0]["title"])),
             E.filename(getfilename(meta,img)),
+            E.Commons_filename(getfilename(meta,img)),
             E.description(getdesc(meta, img)),
             E.permissions("{{Kungliga biblioteket image|libris-id=%s}}\n{{CC0}}" % img["id"]),
             E.date(getdate(meta))
@@ -74,8 +80,7 @@ def filedata():
 
 
 
-# Download and build xml
-
+# Download metadata and build xml
 r = requests.get(url)
 tree = html.fromstring(r.content)
 linkels = tree.xpath("//a[contains(@href, '.tif')]/@href")
@@ -83,7 +88,7 @@ linkels = tree.xpath("//a[contains(@href, '.tif')]/@href")
 image_urls = map(lambda el: {"url": url + el[2:], "id": el.split("%")[0].replace(".","").replace("/","")}, linkels)
 
 # for debug
-if sys.argv[1] and sys.argv[2]:
+if len(sys.argv) == 2:
     image_urls = [{"url": sys.argv[1], "id": sys.argv[2]}]
 
 
