@@ -19,7 +19,6 @@ def getdesc(meta, img):
     desc = meta["xsearch"]["list"][0]["title"].replace(" [Elektronisk resurs]","")
     if "creator" in meta["xsearch"]["list"][0]:
         desc += " by " + meta["xsearch"]["list"][0]["creator"] + "."
-    desc += "\n\n{{Kungliga biblioteket image|libris-id=%s}}\n" % img["id"]
     return cleanbibblo(desc)
 
 
@@ -67,6 +66,7 @@ def filedata():
             E.title(cleanbibblo(meta["xsearch"]["list"][0]["title"])),
             E.filename(getfilename(meta,img)),
             E.description(getdesc(meta, img)),
+            E.permissions("{{Kungliga biblioteket image|libris-id=%s}}\n{{CC0}}" % img["id"]),
             E.date(getdate(meta))
         ))
 
