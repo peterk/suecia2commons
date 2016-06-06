@@ -3,9 +3,9 @@ import requests
 from lxml import html
 from lxml.builder import E
 from lxml.etree import tostring
+import sys
 
 url = "https://data.kb.se/datasets/2014/10/suecia/"
-template = "{{Kungliga biblioteket image|libris-id=%s|url=%s}}"
 
 def getmeta(libris_id):
     lurl = "http://libris.kb.se/xsearch/?query=onr:%s&format=json" % libris_id
@@ -14,10 +14,6 @@ def getmeta(libris_id):
         return r.json()
 
 
-r = requests.get(url)
-tree = html.fromstring(r.content)
-linkels = tree.xpath("//a[contains(@href, '.tif')]/@href")
-image_urls = map(lambda el: {"url": url + el[2:], "id": el.split("%")[0].replace(".","").replace("/","")}, linkels)
 
 def getdesc(meta, img):
     desc = meta["xsearch"]["list"][0]["title"].replace(" [Elektronisk resurs]","")
@@ -29,9 +25,26 @@ def getdesc(meta, img):
 
 def getdate(meta):
     if "date" in meta["xsearch"]["list"][0]:
-        return meta["xsearch"]["list"][0]["date"]
-    else:
-        return "{{between|1600|1715}}" # default date if unknown
+        d = meta["xsearch"]["list"][0]["date"].strip()
+
+        # simple year
+        if re.search("^\d\d\d\d$", d):
+            return d
+
+        #check between dates
+        res = re.search("\[\s*mellan\s*(\d\d\d\d)[\s\w]*(\d\d\d\d)\s*\]", d)
+        if res:
+            if res.group(1) and res.group(2):
+                return "{{between|%s|%s}}" % (res.group(1), res.group(2))
+
+        #check single circa year
+        res = re.search("\[(\d\d\d\d)\]", d)
+        if res:
+            if res.group(1):
+                return "{{circa|%s}}" % res.group(1)
+
+        # fallback to default
+        return "{{between|1661|1715}}" # default date if unknown
 
 
 def cleanbibblo(text):
@@ -53,6 +66,20 @@ def filedata():
         ))
 
     return filesxml
+
+
+
+# Download and build xml
+
+r = requests.get(url)
+tree = html.fromstring(r.content)
+linkels = tree.xpath("//a[contains(@href, '.tif')]/@href")
+
+image_urls = map(lambda el: {"url": url + el[2:], "id": el.split("%")[0].replace(".","").replace("/","")}, linkels)
+
+# for debug
+if sys.argv[1] and sys.argv[2]:
+    image_urls = [{"url": sys.argv[1], "id": sys.argv[2]}]
 
 
 xml = E.metadata(
