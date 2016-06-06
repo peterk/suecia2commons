@@ -47,6 +47,11 @@ def getdate(meta):
         return "{{between|1661|1715}}" # default date if unknown
 
 
+def getfilename(meta, img):
+    """Return a clean filename based on libris identifier"""
+    return "Suecia antiqua (%s)" % img["url"].replace(url,"").replace("/","").replace("%2C","_").replace(".tif", "")
+
+
 def cleanbibblo(text):
     """Remove bibliographic notation in []"""
     return re.sub(r' \[[^\]]*\]', '',text)
@@ -60,7 +65,7 @@ def filedata():
         filesxml.append(E.record(
             E.source(img["url"]),
             E.title(cleanbibblo(meta["xsearch"]["list"][0]["title"])),
-            E.filename(img["url"].replace(url,"").replace("/","").replace("%2C","_")),
+            E.filename(getfilename(meta,img)),
             E.description(getdesc(meta, img)),
             E.date(getdate(meta))
         ))
